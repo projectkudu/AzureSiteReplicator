@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.Title - My ASP.NET Application</title>
+    <title>Azure Websites Content Replicator</title>
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
     <script>
@@ -22,14 +22,14 @@
          ];
     </script>
     <script>
-        function paintDC(regionName, isMaster) {
+        function paintDC(regionName, siteName ,isMaster) {
         for (var ii = 0; ii < regions.length; ii++) {
             if (regions[ii].stamp_code == regionName) {
-                renderRegion(regions[ii], isMaster);
+                renderRegion(regions[ii], siteName, isMaster);
             }
         }
     }
-    function renderRegion(region, isMaster) {
+    function renderRegion(region,siteName,  isMaster) {
         var colorName;
         if (isMaster == true)
             colorName = "blue";
@@ -43,30 +43,15 @@
         ctx.stroke();
         ctx.fillStyle = colorName;
         ctx.fill();
+        ctx.font = "25px Verdana";
+        ctx.fillStyle = "black";
+        ctx.globalAlpha = 1;
+        ctx.fillText(siteName, region.x-30, region.y-30);
     }
     </script>
 
 </head>
 <body>
-    <div class="navbar navbar-inverse navbar-fixed-top">
-        <div class="container">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                @Html.ActionLink("Azure Site Replicator", "Index", "Home", null, new { @class = "navbar-brand" })
-            </div>
-            <div class="navbar-collapse collapse">
-                <ul class="nav navbar-nav">
-                    <li>@Html.ActionLink("Home", "Index", "Home")</li>
-                    <li>@Html.ActionLink("About", "About", "Home")</li>
-                    <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
-                </ul>
-            </div>
-        </div>
-    </div>
     <div class="container body-content">
         @RenderBody()
     <script>
@@ -80,13 +65,16 @@
         
         var loadedRegionsCodes = document.getElementById("regionText").value;
         var masterRegion = document.getElementById("masterRegion").value;
+        var siteNamesList = document.getElementById("siteNames").value;
+        var siteName = document.getElementById("siteName").value;
 
-        paintDC(masterRegion, true);
+        paintDC(masterRegion, siteName, true);
 
         var loadedRegArr = loadedRegionsCodes.split(",");
+        var siteNames = siteNamesList.split(",");
 
         for (var ii = 0; ii < loadedRegArr.length; ii++) {
-            paintDC(loadedRegArr[ii], false);
+            paintDC(loadedRegArr[ii], siteNames[ii], false);
         }
 
     </script>

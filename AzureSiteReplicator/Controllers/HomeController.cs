@@ -15,9 +15,16 @@ namespace AzureSiteReplicator.Controllers
     {
         public ActionResult Index()
         {
-            ViewData["publishSettingsFiles"] = Directory.GetFiles(Environment.Instance.PublishSettingsPath).Select(path => Path.GetFileName(path).Split('.').First());
+            string siteList = "";
+            foreach (string site in Directory.GetFiles(Environment.Instance.PublishSettingsPath).Select(path => Path.GetFileName(path).Split('.').First()))
+            {
+                siteList += site + ",";
+            }
+            ViewData["publishSettingsFiles"] = siteList.TrimEnd(',');
             //figure out where you are 
             var uri = new Uri(Request.Url.ToString());
+            ViewData["siteName"]= uri.Host.Split('.')[0];
+
             IPHostEntry host = Dns.GetHostEntry(uri.Host);
             ViewData["masterRegion"] = getRegionNameFromHost(host.HostName);
 

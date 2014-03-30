@@ -2,28 +2,30 @@
     ViewBag.Title = "Site list";
 }
 
-<div class="jumbotron">
-    <h1>Site list</h1>
+<div>
+<!--    <h3>Site replicas for: @ViewData["siteName"].ToString()</h3>-->
 
-    <ul class="list-group">
-        @foreach (var site in (IEnumerable<string>)ViewData["publishSettingsFiles"])
-        {
-            <li class="list-group-item">@site</li>
-        }
-    </ul>
 </div>
 
 <form action="" method="post" enctype="multipart/form-data">
-    <label for="file">Upload new PublishSettings file:</label>
-    <input type="file" name="file" id="file" />
-    <input type="submit" />
+    Select replica publish profiles
+    <div id="upload-file-container">
+        <input type="file" name="file" id="file"/>
+    </div>
+    <input type="image" src="Images/submit.jpg"/>
 </form>
+
+
 
 <input type="hidden" id="regionText" value="@ViewData["regionCodes"].ToString()"/>
 <input type="hidden" id="masterRegion" value="@ViewData["masterRegion"].ToString()" />
+<input type="hidden" id="siteNames" value="@ViewData["publishSettingsFiles"].ToString()" />
+<input type="hidden" id="siteName" value="@ViewData["siteName"].ToString()" />
+
+
 
 <div style="visibility:hidden">
-    <img id="world" src="Images/world.jpg" alt="The Scream" width="0" height="0">
+    <img id="world" src="Images/world.jpg" alt="Azure Regions" width="0" height="0">
 </div>
     <canvas id="myCanvas" width="1200" height="680" style="border:1px solid #d3d3d3;" />
 

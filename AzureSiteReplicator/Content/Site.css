@@ -16,6 +16,24 @@ textarea {
     max-width: 280px;
 }
 
+
+#upload-file-container {
+   width: 200px;
+   height: 30px;
+   position: relative;
+   border: solid 1px black;
+   overflow: hidden;
+   background:url(Images/submit.jpg) no-repeat;
+}
+
+#upload-file-container input[type="file"]
+{
+   margin: 0;
+   opacity: 0;   
+   font-size: 100px;
+   background:url(Images/submit.jpg) no-repeat;
+}
+
 /* styles for validation helpers */
 .field-validation-error {
     color: #b94a48;
