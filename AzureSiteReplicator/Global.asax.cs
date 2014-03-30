@@ -23,7 +23,7 @@ namespace AzureSiteReplicator
             BundleConfig.RegisterBundles(BundleTable.Bundles);
 
             // Trigger an initial deployment when we start
-            //Replicator.Instance.TriggerDeployment();
+            Replicator.Instance.TriggerDeployment();
         }
     }
 }

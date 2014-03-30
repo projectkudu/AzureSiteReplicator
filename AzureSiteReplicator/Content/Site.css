@@ -16,7 +16,80 @@ textarea {
     max-width: 280px;
 }
 
+/* file upload stuff*/
 
+.file-upload {
+	overflow: hidden;
+	display: inline-block;
+	position: relative;	
+	vertical-align: middle;
+	text-align: center;
+
+	/* Cosmetics */
+	color: #fff;
+	border: 2px solid #2FA2FF;
+	background: #6FBEFF;
+
+	/* Nice if your browser can do it */
+	-moz-border-radius: 8px;
+	-webkit-border-radius: 8px;
+	border-radius: 8px;
+	text-shadow: #000 1px 1px 4px;
+    }
+	
+.file-upload:hover { 
+	background: #2FA2FF; 
+	}
+
+.file-upload.focus { 
+	outline: 2px solid yellow;
+	}
+
+.file-upload input {
+	position: absolute;
+	top: 0;
+	left: 0;
+	margin: 0;
+	font-size: 70px;
+
+	/* Loses tab index in webkit if width is set to 0 */
+	opacity: 0;
+	filter: alpha(opacity=0);
+	}
+
+.file-upload strong { 
+	font: normal 1.75em arial,sans-serif; 
+	}	
+	
+.file-upload span {
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: inline-block;
+
+	/* Adjust button text vertical alignment */
+	padding-top: .45em;
+	}
+
+/* Adjust the button size */	
+.file-upload { height: 3em; }
+.file-upload,
+.file-upload span {	width: 14em; }	
+
+.file-upload-status {
+	margin-left: 10px;
+	vertical-align: middle;
+	padding: 7px 11px;
+	font-weight: bold;	
+	font-size: 16px;
+	color: #888;
+	background: #f8f8f8;
+	border: 3px solid #ddd;
+	}
+.field { 
+	padding: 0 0 1em; 
+	}
+/*
 #upload-file-container {
    width: 200px;
    height: 30px;
@@ -33,7 +106,7 @@ textarea {
    font-size: 100px;
    background:url(Images/submit.jpg) no-repeat;
 }
-
+*/
 /* styles for validation helpers */
 .field-validation-error {
     color: #b94a48;

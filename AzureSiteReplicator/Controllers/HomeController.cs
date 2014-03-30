@@ -62,7 +62,7 @@ namespace AzureSiteReplicator.Controllers
                 file.SaveAs(path);
 
                 // Trigger a deployment since we just added a new target site
-                //Replicator.Instance.TriggerDeployment();
+                Replicator.Instance.TriggerDeployment();
             }
 
             return RedirectToAction("Index");
