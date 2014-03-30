@@ -6,6 +6,45 @@
     <title>@ViewBag.Title - My ASP.NET Application</title>
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
+    <script>
+        var regions = [
+        { 'stamp_code': 'AM2', 'region_name': 'West Europe', 'city': 'Amsterdam', 'Country': 'Netherlands','x':591,'y':179},
+        { 'stamp_code': 'DB3', 'region_name': 'North Europe', 'city': 'Dublin', 'Country': 'Ireland', 'x': 543, 'y': 174 },
+        { 'stamp_code': 'BLU', 'region_name': 'East US', 'city': 'Virginia', 'Country': 'USA', 'x': 279, 'y': 243 },
+        { 'stamp_code': 'BAY', 'region_name': 'West US', 'city': 'Bay Area', 'Country': 'USA', 'x': 166, 'y': 231 },
+        { 'stamp_code': 'CH1', 'region_name': 'North Central US', 'city': 'Chicago', 'Country': 'USA', 'x': 287, 'y': 197 },
+        { 'stamp_code': 'SN1', 'region_name': 'South Central US', 'city': 'San Antonio', 'Country': 'USA', 'x': 223, 'y': 279 },
+        { 'stamp_code': 'HK1', 'region_name': 'East Asia', 'city': 'Hong Kong', 'Country': 'China/Hong Kong', 'x': 965, 'y': 307 },
+        { 'stamp_code': 'SG1', 'region_name': 'Southeast Asia', 'city': 'Singapore', 'Country': 'Singapore', 'x': 906, 'y': 407 },
+        { 'stamp_code': 'CQ1', 'region_name': 'Brazil South', 'city': 'Sao Paulo', 'Country': 'Brazil', 'x': 429, 'y': 470 },
+        { 'stamp_code': 'KW1', 'region_name': 'Japan East', 'city': 'Kawaguchi', 'Country': 'Japan' ,'x': 1031, 'y': 226 },
+        { 'stamp_code': 'OS1', 'region_name': 'Japan West', 'city': 'Osaka', 'Country': 'Japan', 'x': 1031, 'y': 259 }
+         ];
+    </script>
+    <script>
+        function paintDC(regionName, isMaster) {
+        for (var ii = 0; ii < regions.length; ii++) {
+            if (regions[ii].stamp_code == regionName) {
+                renderRegion(regions[ii], isMaster);
+            }
+        }
+    }
+    function renderRegion(region, isMaster) {
+        var colorName;
+        if (isMaster == true)
+            colorName = "blue";
+        else
+            colorName = "green";
+
+        ctx.beginPath();
+        ctx.globalAlpha = 0.3;
+        ctx.arc(region.x, region.y, 25, 0, 2 * Math.PI);
+        ctx.strokeStyle = colorName;
+        ctx.stroke();
+        ctx.fillStyle = colorName;
+        ctx.fill();
+    }
+    </script>
 
 </head>
 <body>
@@ -30,6 +69,27 @@
     </div>
     <div class="container body-content">
         @RenderBody()
+    <script>
+        
+        var c = document.getElementById("myCanvas");
+        var ctx = c.getContext("2d");
+        var img = document.getElementById("world");
+        img.clientWidth = 1157;
+        img.clientHeight = 651;
+        ctx.drawImage(img, 10, 10);
+        
+        var loadedRegionsCodes = document.getElementById("regionText").value;
+        var masterRegion = document.getElementById("masterRegion").value;
+
+        paintDC(masterRegion, true);
+
+        var loadedRegArr = loadedRegionsCodes.split(",");
+
+        for (var ii = 0; ii < loadedRegArr.length; ii++) {
+            paintDC(loadedRegArr[ii], false);
+        }
+
+    </script>
         <hr />
         <footer>
             <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
@@ -39,5 +99,6 @@
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
     @RenderSection("scripts", required: false)
+
 </body>
 </html>

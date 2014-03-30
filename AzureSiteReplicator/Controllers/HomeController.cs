@@ -1,19 +1,48 @@
 ﻿using System;
 using System.IO;
+using System.Net;
+using System.Net.Http;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.Collections;
+using Microsoft.Web.Deployment;
 
 namespace AzureSiteReplicator.Controllers
 {
+
     public class HomeController : Controller
     {
         public ActionResult Index()
         {
-            var publishSettingsFiles = Directory.GetFiles(Environment.Instance.PublishSettingsPath)
-                .Select(path=> Path.GetFileName(path).Split('.').First());
+            ViewData["publishSettingsFiles"] = Directory.GetFiles(Environment.Instance.PublishSettingsPath).Select(path => Path.GetFileName(path).Split('.').First());
+            //figure out where you are 
+            var uri = new Uri(Request.Url.ToString());
+            IPHostEntry host = Dns.GetHostEntry(uri.Host);
+            ViewData["masterRegion"] = getRegionNameFromHost(host.HostName);
 
-            return View(publishSettingsFiles);
+            //figure out where the files are
+            string regionCodes = "";
+            string[] pubFiles = Directory.GetFiles(Environment.Instance.PublishSettingsPath);
+            foreach (string pubFile in pubFiles)
+            {
+                PublishSettings publishSettings = new PublishSettings(pubFile);
+                regionCodes += getRegionNameFromHost(publishSettings.PublishUrlRaw)+",";
+            }
+            ViewData["regionCodes"] = regionCodes.TrimEnd(',');
+
+            return View();
+        }
+
+        private string getRegionNameFromHost(string host){
+
+            string subDomain = host.Split('.')[0];
+            //waws-prod-bay-001
+            string[] urlArr = subDomain.Split('-');
+            string masterRegion = "HK1";
+            if (urlArr.Length == 4)
+                masterRegion = urlArr[2].ToUpper();
+            return masterRegion;
         }
 
         [HttpPost]
@@ -26,7 +55,7 @@ namespace AzureSiteReplicator.Controllers
                 file.SaveAs(path);
 
                 // Trigger a deployment since we just added a new target site
-                Replicator.Instance.TriggerDeployment();
+                //Replicator.Instance.TriggerDeployment();
             }
 
             return RedirectToAction("Index");

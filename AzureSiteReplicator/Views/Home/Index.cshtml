@@ -6,7 +6,7 @@
     <h1>Site list</h1>
 
     <ul class="list-group">
-        @foreach (var site in Model)
+        @foreach (var site in (IEnumerable<string>)ViewData["publishSettingsFiles"])
         {
             <li class="list-group-item">@site</li>
         }
@@ -18,3 +18,12 @@
     <input type="file" name="file" id="file" />
     <input type="submit" />
 </form>
+
+<input type="hidden" id="regionText" value="@ViewData["regionCodes"].ToString()"/>
+<input type="hidden" id="masterRegion" value="@ViewData["masterRegion"].ToString()" />
+
+<div style="visibility:hidden">
+    <img id="world" src="Images/world.jpg" alt="The Scream" width="0" height="0">
+</div>
+    <canvas id="myCanvas" width="1200" height="680" style="border:1px solid #d3d3d3;" />
+
