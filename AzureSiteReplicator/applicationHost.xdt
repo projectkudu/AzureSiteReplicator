@@ -3,8 +3,8 @@
   <system.applicationHost>
     <sites>
       <site name="%XDT_SCMSITENAME%" xdt:Locator="Match(name)">
-        <application path="/sitereplicator" xdt:Locator="Match(path)" xdt:Transform="Remove" />
-        <application path="/sitereplicator" preloadEnabled="%XDT_PRELOADENABLED%" xdt:Transform="Insert">
+        <application path="/sitereplicatorux" xdt:Locator="Match(path)" xdt:Transform="Remove" />
+        <application path="/sitereplicatorux" preloadEnabled="%XDT_PRELOADENABLED%" xdt:Transform="Insert">
           <virtualDirectory path="/" physicalPath="%XDT_EXTENSIONPATH%" />
         </application>
       </site>

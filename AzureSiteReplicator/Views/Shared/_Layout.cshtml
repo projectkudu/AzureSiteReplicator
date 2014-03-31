@@ -70,11 +70,13 @@
 
         paintDC(masterRegion, siteName, true);
 
-        var loadedRegArr = loadedRegionsCodes.split(",");
-        var siteNames = siteNamesList.split(",");
+        if (loadedRegionsCodes != "NONE") {
+            var loadedRegArr = loadedRegionsCodes.split(",");
+            var siteNames = siteNamesList.split(",");
 
-        for (var ii = 0; ii < loadedRegArr.length; ii++) {
-            paintDC(loadedRegArr[ii], siteNames[ii], false);
+            for (var ii = 0; ii < loadedRegArr.length; ii++) {
+                paintDC(loadedRegArr[ii], siteNames[ii], false);
+            }
         }
 
     </script>

@@ -20,7 +20,10 @@ namespace AzureSiteReplicator.Controllers
             {
                 siteList += site + ",";
             }
-            ViewData["publishSettingsFiles"] = siteList.TrimEnd(',');
+            if (siteList == "")
+                ViewData["publishSettingsFiles"] = "NONE";
+            else
+                ViewData["publishSettingsFiles"] = siteList.TrimEnd(',');
             //figure out where you are 
             var uri = new Uri(Request.Url.ToString());
             ViewData["siteName"]= uri.Host.Split('.')[0];
@@ -55,16 +58,22 @@ namespace AzureSiteReplicator.Controllers
         [HttpPost]
         public ActionResult Index(HttpPostedFileBase file)
         {
-            if (file.ContentLength > 0)
+            try
             {
-                var fileName = Path.GetFileName(file.FileName);
-                var path = Path.Combine(Environment.Instance.PublishSettingsPath, fileName);
-                file.SaveAs(path);
+                if (file.ContentLength > 0)
+                {
+                    var fileName = Path.GetFileName(file.FileName);
+                    var path = Path.Combine(Environment.Instance.PublishSettingsPath, fileName);
+                    file.SaveAs(path);
 
-                // Trigger a deployment since we just added a new target site
-                Replicator.Instance.TriggerDeployment();
+                    // Trigger a deployment since we just added a new target site
+                    Replicator.Instance.TriggerDeployment();
+                }
+
             }
-
+            catch { 
+             return RedirectToAction("Index");
+            }
             return RedirectToAction("Index");
         }
 
