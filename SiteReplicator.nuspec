@@ -7,7 +7,7 @@
     <authors>David Ebbo</authors>
     <owners>David Ebbo</owners>
     <licenseUrl>http://opensource.org/licenses/Apache-2.0</licenseUrl>
-    <projectUrl>https://github.com/davidebbo/AzureSiteReplicator</projectUrl>
+    <projectUrl>https://github.com/projectkudu/AzureSiteReplicator</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>A tool to replicate a site into other sites</description>
     <tags>replication</tags>
