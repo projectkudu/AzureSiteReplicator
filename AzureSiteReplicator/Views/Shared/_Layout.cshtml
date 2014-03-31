@@ -19,7 +19,8 @@
         { 'stamp_code': 'CQ1', 'region_name': 'Brazil South', 'city': 'Sao Paulo', 'Country': 'Brazil', 'x': 429, 'y': 470 },
         { 'stamp_code': 'KW1', 'region_name': 'Japan East', 'city': 'Kawaguchi', 'Country': 'Japan' ,'x': 1031, 'y': 226 },
         { 'stamp_code': 'OS1', 'region_name': 'Japan West', 'city': 'Osaka', 'Country': 'Japan', 'x': 1031, 'y': 259 }
-         ];
+        ];
+        var ctx;
     </script>
     <script>
         function paintDC(regionName, siteName ,isMaster) {
@@ -55,29 +56,30 @@
     <div class="container body-content">
         @RenderBody()
     <script>
-        
-        var c = document.getElementById("myCanvas");
-        var ctx = c.getContext("2d");
-        var img = document.getElementById("world");
-        img.clientWidth = 1157;
-        img.clientHeight = 651;
-        ctx.drawImage(img, 10, 10);
-        
-        var loadedRegionsCodes = document.getElementById("regionText").value;
-        var masterRegion = document.getElementById("masterRegion").value;
-        var siteNamesList = document.getElementById("siteNames").value;
-        var siteName = document.getElementById("siteName").value;
+        window.onload = function() {
+            var c = document.getElementById("myCanvas");
+            ctx = c.getContext("2d");
+            var img = document.getElementById("world");
+            img.clientWidth = 1157;
+            img.clientHeight = 651;
+            ctx.drawImage(img, 10, 10);
 
-        paintDC(masterRegion, siteName, true);
+            var loadedRegionsCodes = document.getElementById("regionText").value;
+            var masterRegion = document.getElementById("masterRegion").value;
+            var siteNamesList = document.getElementById("siteNames").value;
+            var siteName = document.getElementById("siteName").value;
 
-        if (loadedRegionsCodes != "NONE") {
-            var loadedRegArr = loadedRegionsCodes.split(",");
-            var siteNames = siteNamesList.split(",");
+            paintDC(masterRegion, siteName, true);
 
-            for (var ii = 0; ii < loadedRegArr.length; ii++) {
-                paintDC(loadedRegArr[ii], siteNames[ii], false);
+            if (loadedRegionsCodes != "NONE") {
+                var loadedRegArr = loadedRegionsCodes.split(",");
+                var siteNames = siteNamesList.split(",");
+
+                for (var ii = 0; ii < loadedRegArr.length; ii++) {
+                    paintDC(loadedRegArr[ii], siteNames[ii], false);
+                }
             }
-        }
+        };
 
     </script>
         <hr />
