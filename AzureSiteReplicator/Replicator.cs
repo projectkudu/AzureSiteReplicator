@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Web.Deployment;
+using AzureSiteReplicator.Contracts;
+using AzureSiteReplicator.Data;
 
 namespace AzureSiteReplicator
 {
@@ -15,6 +17,7 @@ namespace AzureSiteReplicator
         private int _inUseCount;
         private DateTime _lastChangeTime;
         private DateTime _publishStartTime;
+        private IConfigRepository _repository;
 
         public Replicator()
         {
@@ -26,12 +29,12 @@ namespace AzureSiteReplicator
             fileSystemWatcher.Error += OnError;
             fileSystemWatcher.IncludeSubdirectories = true;
             fileSystemWatcher.EnableRaisingEvents = true;
+            _repository = new ConfigRepository();
         }
 
         private void OnChanged(object sender, FileSystemEventArgs e)
         {
             Trace.TraceInformation("{0} OnChanged {1} {2}", DateTime.Now, e.FullPath, e.ChangeType);
-
             TriggerDeployment();
         }
 
@@ -66,7 +69,9 @@ namespace AzureSiteReplicator
                     _publishStartTime = DateTime.Now;
                     try
                     {
-                        await PublishContentToAllSites(Environment.Instance.ContentPath, Environment.Instance.PublishSettingsPath);
+                        await PublishContentToAllSites(
+                            Environment.Instance.ContentPath,
+                            Environment.Instance.SiteReplicatorPath);
                     }
                     catch (Exception e)
                     {
@@ -82,9 +87,12 @@ namespace AzureSiteReplicator
             Trace.TraceError(e.GetException().ToString());
         }
 
-        private async Task PublishContentToAllSites(string contentPath, string publishSettingsPath)
+        private async Task PublishContentToAllSites(
+            string contentPath,
+            string publishSettingsPath)
         {
-            string[] publishSettingsFiles = Directory.GetFiles(publishSettingsPath);
+            string[] publishSettingsFiles = 
+                FileHelper.FileSystem.Directory.GetFiles(publishSettingsPath, "*.publishSettings");
 
             Trace.TraceInformation("Publish settings found: {0}", String.Join(",", publishSettingsFiles));
 
@@ -95,7 +103,11 @@ namespace AzureSiteReplicator
             {
                 try
                 {
-                    return await Task<DeploymentChangeSummary>.Run(() => webDeployHelper.DeployContentToOneSite(Environment.Instance.ContentPath, publishSettingsFile));
+                    return await Task<DeploymentChangeSummary>.Run(() => 
+                        webDeployHelper.DeployContentToOneSite(
+                            Repository,
+                            Environment.Instance.ContentPath,
+                            publishSettingsFile));
                 }
                 catch (Exception e)
                 {
@@ -119,6 +131,14 @@ namespace AzureSiteReplicator
                 Trace.TraceInformation("Errors: {0}", changeSummary.Errors);
                 Trace.TraceInformation("Warnings: {0}", changeSummary.Warnings);
                 Trace.TraceInformation("Total changes: {0}", changeSummary.TotalChanges);
+            }
+        }
+
+        public IConfigRepository Repository
+        {
+            get
+            {
+                return _repository;
             }
         }
     }

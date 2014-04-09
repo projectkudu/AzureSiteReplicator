@@ -1,20 +1,156 @@
-﻿@{
+﻿@model AzureSiteReplicator.Models.ReplicationInfoModel
+
+@{
     ViewBag.Title = "Site list";
 }
 
-<div class="jumbotron">
-    <h1>Site list</h1>
+<div class="container">
+    <div class="row navbar" style="margin-top:10px;">
+        <div class="col-sm-6 col-md-4" id="tabHeadings">
+            <ul class="nav nav-tabs" data-tabs="tabs">
+                <li class="active"><a data-toggle="tab" href="#sites">Sites</a></li>
+                <li><a data-toggle="tab" href="#skips">Skip Files</a></li>
+            </ul>
+        </div>
+        <div class="col-sm-6 col-md-8">
+        </div>
+    </div>
 
-    <ul class="list-group">
-        @foreach (var site in Model)
-        {
-            <li class="list-group-item">@site</li>
-        }
-    </ul>
+    <div class="row">
+        <div class="col-sm-1"></div>
+
+        <div class="col-sm-10 tab-body tab-content">
+            
+            <!-- Sites Tab -->
+            <div class="tab-pane active" id="sites">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <h1>Site List</h1>
+                        <ul class="list-group" style="margin-bottom:0px;">
+                            @if (Model.SiteStatuses.Count == 0)
+                            {
+                                @:There doesn't appear to be any sites configured yet.  Upload a publish settings file to get started.
+                            }
+                            else
+                            {
+                                var sites = Model.SiteStatuses;
+                                foreach(var site in sites)
+                                {
+                                    <li class="list-group-item">
+                                        @site.Name - @site.State.ToString()
+                                    </li>
+                                }
+                            }
+                        </ul>
+                    </div>
+                </div>
+                <div class="row" style="margin-top:100px;">
+                    <div class="col-sm-12">
+                        <h4>Upload Publish Settings File</h4>
+                        <form action="" class="form-inline" role="form" method="post" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <input type="file" name="file" id="file"/>
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" style="height:23px">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skips Tab -->
+            <div class="tab-pane" id="skips">
+                <h1>Skip Rules</h1>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <input type="text" id="skipExpressionText" placeholder="Regular Expression for File to Skip" class="col-sm-6"/>
+                        <button type="button" id="addSkipButton" disabled="disabled" class="btn btn-default btn-sm col-sm-1" style="margin-left:5px;">Add</button>
+                        <button type="button" id="saveSkipButton" disabled="disabled" class="btn btn-default btn-sm col-sm-1" style="margin-left:5px;">Save</button>
+                    </div>
+                </div>
+                <div class="row" style="margin-top:20px;">
+                    <div class="col-sm-12">
+                        <ul id="skipRulesList" class="list-group" style="margin-bottom:0px;">
+                            @foreach (var skip in Model.SkipFiles)
+                            {
+                                <li class="list-group-item skipFilesListItem">
+                                    <span>@skip</span>
+                                    <button type="button" class="close" aria-hidden="true">&times;</button>
+                                </li>
+                            }
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-1"></div>
+    </div>
 </div>
 
-<form action="" method="post" enctype="multipart/form-data">
-    <label for="file">Upload new PublishSettings file:</label>
-    <input type="file" name="file" id="file" />
-    <input type="submit" />
-</form>
+@section scripts{
+    <script type="text/javascript">
+        function removeSkipFile() {
+            var $this = $(this);
+            $this.parent().remove();
+            $('#saveSkipButton').prop('disabled', false);
+        }
+
+        $('#addSkipButton').click(function () {
+            var $expr = $('#skipExpressionText');
+            var exprValue = $expr.val();
+
+            var li = $('<li />', { 'class': 'list-group-item' })
+                .append($('<span/>', { text: exprValue }))
+                .append($('<button />', 
+                    {
+                        'type': 'button',
+                        'class': 'close',
+                        'aria-hidden': 'true',
+                        text: '×'  // Special x character
+                    }
+                ).click(removeSkipFile)
+            );
+
+            $('#skipRulesList').append(li);
+
+            $('#saveSkipButton').prop('disabled', false);
+            $(this).prop('disabled', true);
+            $expr.val('');
+        });
+
+        $('#skipExpressionText').keyup(function () {
+            var $this = $(this);
+            var $addButton = $('#addSkipButton');
+            if ($this.val().length == 0) {
+                $addButton.prop('disabled', true);
+            }
+            else {
+                $addButton.prop('disabled', false);
+            }
+        });
+
+        $('#saveSkipButton').click(function () {
+            var skipsList = [];
+            $('#skipRulesList li span').each(function () {
+                skipsList.push($(this).text());
+            });
+
+            $.ajax({
+                type: "POST",
+                url: "/home/skipfiles",
+                contentType: "application/json",
+                data: JSON.stringify(skipsList),
+                error: function (jqXhr, textStatus, errorThrown) {
+                    alert(textStatus + ": " + errorThrown);
+                }
+            });
+
+            $(this).prop('disabled', true);
+        });
+
+        $('li.skipFilesListItem > button').click(removeSkipFile);
+    </script>
+}

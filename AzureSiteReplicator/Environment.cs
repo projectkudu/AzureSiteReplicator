@@ -1,4 +1,6 @@
-﻿using System;
+﻿using AzureSiteReplicator.Contracts;
+using AzureSiteReplicator.Data;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -8,9 +10,37 @@ using System.Web.Hosting;
 
 namespace AzureSiteReplicator
 {
-    public class Environment
+    public class Environment : IEnvironment
     {
-        public static Environment Instance = new Environment();
+        private static IEnvironment s_instance = null;
+        private static Object lockObj = new Object();
+
+        public static IEnvironment Instance
+        {
+            get
+            {
+                if (s_instance == null)
+                {
+                    lock (lockObj)
+                    {
+                        if (s_instance == null)
+                        {
+                            s_instance = new Environment();
+                        }
+                    }
+                }
+
+                return s_instance;
+            }
+
+            set
+            {
+                lock (lockObj)
+                {
+                    s_instance = value;
+                }
+            }
+        }
 
         public Environment()
         {
@@ -23,7 +53,7 @@ namespace AzureSiteReplicator
                 // Publish the wwwroot folder
                 ContentPath = Path.Combine(homePath, "site", "wwwroot");
 
-                PublishSettingsPath = Path.Combine(homePath, "data", "SiteReplicator");
+                SiteReplicatorPath = Path.Combine(homePath, "data", "SiteReplicator");
             }
             else
             {
@@ -33,19 +63,19 @@ namespace AzureSiteReplicator
 
                 ContentPath = Path.Combine(appData, "source");
 
-                PublishSettingsPath = Path.Combine(appData, "PublishSettingsFiles");
+                SiteReplicatorPath = Path.Combine(appData, "SiteReplicator");
             }
 
             Trace.TraceInformation("ContentPath={0}", ContentPath);
             Directory.CreateDirectory(ContentPath);
-            Trace.TraceInformation("PublishSettingsPath={0}", PublishSettingsPath);
-            Directory.CreateDirectory(PublishSettingsPath);
+            Trace.TraceInformation("SiteReplicator={0}", SiteReplicatorPath);
+            Directory.CreateDirectory(SiteReplicatorPath);
         }
 
         // Path to the web content we want to replicate
         public string ContentPath { get; set; }
 
         // Path to the publish settings files that drive where we publish to
-        public string PublishSettingsPath { get; set; }
+        public string SiteReplicatorPath { get; set; }
     }
 }

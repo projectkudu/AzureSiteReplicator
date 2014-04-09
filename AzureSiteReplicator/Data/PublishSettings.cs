@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Xml;
 using System.Xml.XPath;
 
-namespace Microsoft.Web.Deployment
+namespace AzureSiteReplicator.Data
 {
     public class PublishSettings
     {
@@ -35,6 +36,13 @@ namespace Microsoft.Web.Deployment
         {
             XmlDocument doc = new XmlDocument();
             doc.Load(filePath);
+            Load(doc.CreateNavigator());
+        }
+
+        public PublishSettings(Stream stream)
+        {
+            XmlDocument doc = new XmlDocument();
+            doc.Load(stream);
             Load(doc.CreateNavigator());
         }
 
