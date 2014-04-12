@@ -35,8 +35,18 @@ namespace AzureSiteReplicator.Data
         public PublishSettings(string filePath)
         {
             XmlDocument doc = new XmlDocument();
-            doc.Load(filePath);
+
+            using (Stream stream = FileHelper.FileSystem.File.Open(
+                filePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.ReadWrite))
+            {
+                doc.Load(stream);
+            }
+
             Load(doc.CreateNavigator());
+            
         }
 
         public PublishSettings(Stream stream)

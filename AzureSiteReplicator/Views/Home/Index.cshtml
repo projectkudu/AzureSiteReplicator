@@ -9,7 +9,7 @@
         <div class="col-sm-6 col-md-4" id="tabHeadings">
             <ul class="nav nav-tabs" data-tabs="tabs">
                 <li class="active"><a data-toggle="tab" href="#sites">Sites</a></li>
-                <li><a data-toggle="tab" href="#skips">Skip Files</a></li>
+                <li><a data-toggle="tab" href="#skips">Skip Rules</a></li>
             </ul>
         </div>
         <div class="col-sm-6 col-md-8">
@@ -36,7 +36,11 @@
                                 var sites = Model.SiteStatuses;
                                 foreach(var site in sites)
                                 {
-                                    <li class="list-group-item">
+                                    <li class="list-group-item" data-siteName="@site.Name">
+                                        @*<a href="#" title="Sync"><span class="badgePlain glyphicon glyphicon-repeat"></span></a>*@
+                                        <a href="#" title="Remove Site" class="removeSiteBadge"><span class="badgePlain glyphicon glyphicon-remove"></span></a>
+                                        @*<a href="#" title="Edit publish settings"><span class="badgePlain glyphicon glyphicon-edit"></span></a>*@
+                                        <a href="/home/LogFile?siteName=@(site.Name)" title="View logs"><span class="badgePlain glyphicon glyphicon-list"></span></a>
                                         @site.Name - @site.State.ToString()
                                     </li>
                                 }
@@ -71,16 +75,25 @@
                 </div>
                 <div class="row" style="margin-top:20px;">
                     <div class="col-sm-12">
-                        <ul id="skipRulesList" class="list-group" style="margin-bottom:0px;">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Rule</th>
+                                    <th class="rowCentered" style="width:100px;">Is Directory</th>
+                                    <th class="rowCentered" style="width:50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="skipRulesTableBody">
                             @foreach (var skip in Model.SkipFiles)
                             {
-                                <li class="list-group-item skipFilesListItem">
-                                    <span>@skip</span>
-                                    <button type="button" class="close" aria-hidden="true">&times;</button>
-                                </li>
+                                <tr class="skipRuleRow">
+                                    <td>@skip.Expression</td>
+                                    <td class="rowCentered"><input type="checkbox" checked="@skip.IsDirectory"/></td>
+                                    <td class="rowCentered"><button type="button" class="close" aria-hidden="true">&times;</button></td>
+                                </tr>
                             }
-                        </ul>
-
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -94,32 +107,63 @@
     <script type="text/javascript">
         function removeSkipFile() {
             var $this = $(this);
-            $this.parent().remove();
-            $('#saveSkipButton').prop('disabled', false);
+            $this.parent().parent().remove();
+            enableSaveButton();
+            event.preventDefault();
         }
+
+        function enableSaveButton(){
+            var $saveSkipButton = $('#saveSkipButton');
+            $saveSkipButton.prop('disabled', false);
+            $saveSkipButton.addClass('btn-primary');
+        }
+
+        $('.removeSiteBadge').click(function () {
+            var $this = $(this);
+            var siteName = $this.parent().attr("data-siteName");
+            event.preventDefault();
+
+            if (!confirm('Are you sure you would like to remove the site "' + siteName + '"?')) {
+                return;
+            }
+
+            $.ajax({
+                type: "Delete",
+                url: '/home/site?name=' + siteName,
+                contentType: "application/json",
+                error: function (jqXhr, textStatus, errorThrown) {
+                    alert(textStatus + ": " + errorThrown);
+                }
+            });
+
+            $this.parent().remove();
+        });
 
         $('#addSkipButton').click(function () {
             var $expr = $('#skipExpressionText');
             var exprValue = $expr.val();
 
-            var li = $('<li />', { 'class': 'list-group-item' })
-                .append($('<span/>', { text: exprValue }))
-                .append($('<button />', 
-                    {
-                        'type': 'button',
-                        'class': 'close',
-                        'aria-hidden': 'true',
-                        text: '×'  // Special x character
-                    }
-                ).click(removeSkipFile)
-            );
+            var row =
+                '<tr class="skipRuleRow">\n' +
+                '   <td>' + exprValue + '</td>\n' +
+                '   <td class="rowCentered"><input type="checkbox" /></td>\n' +
+                '   <td class="rowCentered"><button type="button" class="close" aria-hidden="true">×</button></td>\n' +
+                '</tr>';
 
-            $('#skipRulesList').append(li);
+            var $row = $(row);
+            $row.find('button').click(removeSkipFile);
+            $row.find('input[type="checkbox"]').change(enableSaveButton);
 
-            $('#saveSkipButton').prop('disabled', false);
+            $('#skipRulesTableBody').append($row);
+            enableSaveButton();
+
             $(this).prop('disabled', true);
             $expr.val('');
+
+            event.preventDefault()
         });
+
+        $('.skipRuleRow input[type="checkbox"]').change(enableSaveButton);
 
         $('#skipExpressionText').keyup(function () {
             var $this = $(this);
@@ -130,27 +174,38 @@
             else {
                 $addButton.prop('disabled', false);
             }
+
+            event.preventDefault()
         });
 
         $('#saveSkipButton').click(function () {
-            var skipsList = [];
-            $('#skipRulesList li span').each(function () {
-                skipsList.push($(this).text());
+            var skipRules = [];
+            $('.skipRuleRow').each(function () {
+                var $this = $(this);
+
+                var skipRule = {};
+                skipRule["expression"] = $this.find('td:nth-child(1)').text();
+                skipRule["isDirectory"] = $this.find('td:nth-child(2) > input').is(':checked');
+                skipRules.push(skipRule);
             });
 
             $.ajax({
                 type: "POST",
-                url: "/home/skipfiles",
+                url: "/home/skiprules",
                 contentType: "application/json",
-                data: JSON.stringify(skipsList),
+                data: JSON.stringify(skipRules),
                 error: function (jqXhr, textStatus, errorThrown) {
-                    alert(textStatus + ": " + errorThrown);
+                    alert("Failed to save skip rules: " + textStatus + ", " + errorThrown);
                 }
             });
 
-            $(this).prop('disabled', true);
+            var $this = $(this);
+            $this.prop('disabled', true);
+            $this.removeClass('btn-primary');
+
+            event.preventDefault()
         });
 
-        $('li.skipFilesListItem > button').click(removeSkipFile);
+        $('tr.skipRuleRow button').click(removeSkipFile);
     </script>
 }

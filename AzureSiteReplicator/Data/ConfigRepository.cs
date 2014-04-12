@@ -10,56 +10,72 @@ namespace AzureSiteReplicator.Data
 {
     public class ConfigRepository : IConfigRepository
     {
-        private volatile ConfigFile _config;
-        private volatile List<SiteStatusModel> _siteStatuses;
+        private ConfigFile _config;
+        private volatile HashSet<Site> _sites;
+
+        public ConfigRepository()
+        {
+            _config = new ConfigFile();
+            _config.LoadOrCreate();
+
+            var profileFilePaths =
+                FileHelper.FileSystem.Directory.GetFiles(
+                    Environment.Instance.SiteReplicatorPath, "*.publishSettings");
+
+            _sites = new HashSet<Site>();
+            foreach (var profilePaths in profileFilePaths)
+            {
+                _sites.Add(new Site(profilePaths));
+            }
+
+        }
 
         public ConfigFile Config
         {
             get
             {
-                ConfigFile config = _config;
-                if (config == null)
-                {
-                    config = new ConfigFile();
-                    config.LoadOrCreate();
-                    _config = config;
-                }
-
-                return config;
+                return _config;
             }
         }
 
-        public IReadOnlyCollection<SiteStatusModel> SiteStatuses
+        public IEnumerable<Site> Sites
         {
             get
             {
-                List<SiteStatusModel> statuses = _siteStatuses;
-                if (statuses == null)
-                {
-                    statuses = new List<SiteStatusModel>();
-                    
-                    var profileNames = FileHelper.FileSystem.Directory.GetFiles(Environment.Instance.SiteReplicatorPath, "*.publishSettings")
-                            .Select(path => FileHelper.GetProfileNameFromFileName(path));
-
-                    foreach (var profileName in profileNames)
-                    {
-                        StatusFile file = new StatusFile(profileName);
-
-                        file.LoadOrCreate();
-                        statuses.Add(new SiteStatusModel(file));
-                    }
-
-                    _siteStatuses = statuses;
-                }
-
-                return statuses.AsReadOnly();
+                HashSet<Site> sites = _sites;
+                return sites;
             }
         }
 
-        public void Reset()
+        public void AddSite(string profilePath)
         {
-            _siteStatuses = null;
-            _config = null;
+            HashSet<Site> sites = new HashSet<Site>(_sites);
+            Site newSite = new Site(profilePath);
+            if (!sites.Contains(newSite))
+            {
+                sites.Add(newSite);
+            }
+
+            _sites = sites;
+        }
+
+        public void RemoveSite(string siteName)
+        {
+            HashSet<Site> sites = _sites;
+
+            Site siteToRemove = sites.FirstOrDefault((m) =>
+            {
+                return string.Equals(siteName, m.Name, StringComparison.OrdinalIgnoreCase);
+            });
+
+            if (siteToRemove != null)
+            {
+                siteToRemove.Delete();
+                sites = new HashSet<Site>(sites);
+                sites.Remove(siteToRemove);
+            }
+
+            _sites = sites;
         }
     }
 }

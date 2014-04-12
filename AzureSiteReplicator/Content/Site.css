@@ -61,6 +61,16 @@ input[type="text"] {
     overflow: visible;
 }
 
+.rowCentered {
+    text-align:center;
+}
+
+.badgePlain {
+    float:right;
+    margin-left:5px;
+    margin-right:5px;
+}
+
 /*#file {
     display:none;
 }*/

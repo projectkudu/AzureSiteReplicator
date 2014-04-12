@@ -51,36 +51,40 @@ namespace AzureSiteReplicator.Test
                 new MockFileData(
                     "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
                     "<config>" +
-                    "  <skipFiles>" +
-                    "    <skip></skip>" +
-                    "  </skipFiles>" +
+                    "  <skipRules>" +
+                    "    <skipRule></skipRule>" +
+                    "  </skipRules>" +
                     "</config>"));
 
             tests.Add(Path.Combine(dirs[2], "config.xml"),
                 new MockFileData(
                     "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
                     "<config>" +
-                    "  <skipFiles>" +
-                    "    <skip>skip1</skip>" +
-                    "  </skipFiles>" +
+                    "  <skipRules>" +
+                    "    <skipRule isDirectory=\"true\">skip1</skipRule>" +
+                    "  </skipRules>" +
                     "</config>"));
 
             tests.Add(Path.Combine(dirs[3], "config.xml"),
                 new MockFileData(
                     "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
                     "<config>" +
-                    "  <skipFiles>" +
-                    "    <skip>skip1</skip>" +
-                    "    <skip>skip2</skip>" +
-                    "  </skipFiles>" +
+                    "  <skipRules>" +
+                    "    <skipRule isDirectory=\"false\">skip1</skipRule>" +
+                    "    <skipRule>skip2</skipRule>" +
+                    "  </skipRules>" +
                     "</config>"));
 
             var expected = new[]{
-                new List<string>(),
-                new List<string>(){""},
-                new List<string>(){"skip1"},
-                new List<string>(){"skip1","skip2"}
+                new List<SkipRule>(),
+                new List<SkipRule>(){new SkipRule()},
+                new List<SkipRule>(){new SkipRule(){Expression = "skip1", IsDirectory = true}},
+                new List<SkipRule>(){
+                    new SkipRule(){Expression = "skip1", IsDirectory = false},
+                    new SkipRule(){Expression = "skip2", IsDirectory = false}
+                }
             };
+
 
             FileHelper.FileSystem = new MockFileSystem(tests);
 
@@ -90,9 +94,7 @@ namespace AzureSiteReplicator.Test
                 config = new ConfigFile();
                 config.LoadOrCreate();
 
-                TestHelpers.VerifyEnumerable<string>(
-                    expected[i].AsEnumerable(),
-                    config.SkipFiles);
+                VerifySkipEnumerables(expected[i].AsEnumerable(), config.SkipRules);
             }
 
             // Test file creation
@@ -101,16 +103,17 @@ namespace AzureSiteReplicator.Test
             config.LoadOrCreate();
 
             Assert.IsTrue(FileHelper.FileSystem.File.Exists(@"c:\foo\config.xml"), "Didn't create a new config file");
-            TestHelpers.VerifyEnumerable<string>((new List<string>()).AsEnumerable(), config.SkipFiles);
+            VerifySkipEnumerables(new List<SkipRule>().AsEnumerable(), config.SkipRules);
         }
 
         [TestMethod]
         public void SaveConfigTest()
         {
             var tests = new[]{
-                new List<string>(),
-                new List<string>(){"skip1"},
-                new List<string>(){"skip1","skip2"}
+                new List<SkipRule>(),
+                new List<SkipRule>(){ new SkipRule(){ Expression ="skip1"}},
+                new List<SkipRule>(){new SkipRule(){ Expression = "skip1", IsDirectory = true},
+                    new SkipRule(){Expression = "skip2", IsDirectory = false}}
             };
 
             System.IO.Abstractions.FileBase MockFile = FileHelper.FileSystem.File;
@@ -126,8 +129,20 @@ namespace AzureSiteReplicator.Test
                 config = new ConfigFile();
                 config.LoadOrCreate();
 
-                TestHelpers.VerifyEnumerable<string>(tests[i].AsEnumerable(), config.SkipFiles);
+                VerifySkipEnumerables(tests[i].AsEnumerable(), config.SkipRules);
             }
+        }
+
+        private void VerifySkipEnumerables(IEnumerable<SkipRule> expected, IEnumerable<SkipRule> actual)
+        {
+            TestHelpers.VerifyEnumerable(
+                expected,
+                actual,
+                (m1, m2) =>
+                {
+                    return string.Equals(m1.Expression, m2.Expression, StringComparison.OrdinalIgnoreCase) &&
+                        m1.IsDirectory == m2.IsDirectory;
+                });
         }
     }
 }

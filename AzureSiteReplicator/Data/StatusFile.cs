@@ -13,7 +13,7 @@ namespace AzureSiteReplicator.Data
 {
     public class StatusFile : IStatusFile, IDisposable
     {
-        private string _profileName;
+        private string _siteName;
         private string _filePath;
         private DeployState _state;
 
@@ -49,7 +49,7 @@ namespace AzureSiteReplicator.Data
 
         public string Name
         {
-            get { return _profileName; }
+            get { return _siteName; }
         }
 
         public DateTime StartTime { get; set; }
@@ -61,12 +61,12 @@ namespace AzureSiteReplicator.Data
         public int ParametersChanged { get; set; }
         public long BytesCopied { get; set; }
 
-        public StatusFile(string profileName)
+        public StatusFile(string siteName)
         {
-            _profileName = profileName;
+            _siteName = siteName;
             _filePath = Path.Combine(
                             Environment.Instance.SiteReplicatorPath,
-                            profileName);
+                            siteName);
 
             _filePath = Path.Combine(_filePath, "status.xml");
 
@@ -188,8 +188,8 @@ namespace AzureSiteReplicator.Data
                     new XElement("parametersChanged", ParametersChanged),
                     new XElement("bytesCopied", BytesCopied)));
 
-            string profileDir = Path.Combine(Environment.Instance.SiteReplicatorPath, _profileName);
-            if (!FileHelper.FileSystem.Directory.Exists(_profileName))
+            string profileDir = Path.Combine(Environment.Instance.SiteReplicatorPath, _siteName);
+            if (!FileHelper.FileSystem.Directory.Exists(_siteName))
             {
                 FileHelper.FileSystem.Directory.CreateDirectory(profileDir);
             }

@@ -8,7 +8,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web;
-//using System.Web.Http;
 using System.Web.Mvc;
 
 namespace AzureSiteReplicator.Controllers
@@ -17,11 +16,16 @@ namespace AzureSiteReplicator.Controllers
     {
         public ActionResult Index()
         {
-            Replicator.Instance.Repository.Reset();
+            List<SiteStatusModel> statuses = new List<SiteStatusModel>();
+            foreach (var site in Replicator.Instance.Repository.Sites)
+            {
+                statuses.Add(new SiteStatusModel(site.Status));
+            }
+
             ReplicationInfoModel model = new ReplicationInfoModel()
             {
-                SiteStatuses = Replicator.Instance.Repository.SiteStatuses,
-                SkipFiles = Replicator.Instance.Repository.Config.SkipFiles
+                SiteStatuses = statuses,
+                SkipFiles = Replicator.Instance.Repository.Config.SkipRules
             };
 
             return View(model);
@@ -39,14 +43,16 @@ namespace AzureSiteReplicator.Controllers
                     var path = Path.Combine(Environment.Instance.SiteReplicatorPath, fileName);
                     
                     file.SaveAs(path);
+
+                    Replicator.Instance.Repository.AddSite(path);
+
+                    // Trigger a deployment since we just added a new target site
+                    Replicator.Instance.TriggerDeployment();
                 }
                 catch (IOException)
                 {
-                    // etodo: error handling
+                    // todo: error handling
                 }
-
-                // Trigger a deployment since we just added a new target site
-                Replicator.Instance.TriggerDeployment();
             }
 
             return RedirectToAction("Index");
@@ -67,14 +73,40 @@ namespace AzureSiteReplicator.Controllers
         }
 
         [HttpPost]
-        public HttpResponseMessage SkipFiles(List<string> skipRules)
+        public HttpResponseMessage SkipRules(IList<SkipRule> skipRules)
         {
-            Replicator.Instance.Repository.Config.SetSkips(skipRules);
-            Replicator.Instance.Repository.Config.Save();
+            if (skipRules == null)
+            {
+                Replicator.Instance.Repository.Config.ClearSkips();
+            }
+            else
+            {
+                Replicator.Instance.Repository.Config.SetSkips(skipRules.ToList());
+            }
 
+            Replicator.Instance.Repository.Config.Save();
             Replicator.Instance.TriggerDeployment();
 
             return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        [HttpDelete]
+        public HttpResponseMessage Site(string name)
+        {
+            Replicator.Instance.Repository.RemoveSite(name);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        public FileResult LogFile(string siteName)
+        {
+            using (LogFile logFile = new LogFile(siteName, true))
+            {
+                byte[] fileBytes = FileHelper.FileSystem.File.ReadAllBytes(logFile.FilePath);
+                return File(
+                    fileBytes,
+                    System.Net.Mime.MediaTypeNames.Application.Octet,
+                    "deploy.log");
+            }
         }
     }
 }

@@ -7,13 +7,23 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 
-
 namespace AzureSiteReplicator.Data
 {
+    public class SkipRule
+    {
+        private string _expression = string.Empty;
+        public string Expression
+        {
+            get { return _expression; }
+            set { _expression = value; }
+        }
+        public bool IsDirectory { get; set; }
+    }
+
     public class ConfigFile
     {
         private string _filePath;
-        private volatile List<string> _skipFiles = new List<string>();
+        private volatile List<SkipRule> _skipRules = new List<SkipRule>();
 
         public ConfigFile()
         {
@@ -25,7 +35,7 @@ namespace AzureSiteReplicator.Data
             XmlDocument doc = new XmlDocument();
             XPathNavigator nav = null;
             bool hasMore;
-            List<string> newSkips = new List<string>();
+            List<SkipRule> newSkips = new List<SkipRule>();
 
             ClearSkips();
 
@@ -48,18 +58,33 @@ namespace AzureSiteReplicator.Data
 
             while (hasMore)
             {
-                if (string.Equals(nav.Name, "skipFiles", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(nav.Name, "skipRules", StringComparison.OrdinalIgnoreCase))
                 {
                     bool hasMoreSkips = nav.MoveToFirstChild();
                     if (hasMoreSkips)
                     {
                         while (hasMoreSkips)
                         {
-                            newSkips.Add(nav.Value);
+                            SkipRule rule = new SkipRule();
+                            rule.Expression = nav.Value;
+
+                            if (nav.MoveToFirstAttribute())
+                            {
+                                if (string.Equals(nav.Name, "isDirectory", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    bool isDir = false;
+                                    bool.TryParse(nav.Value, out isDir);
+                                    rule.IsDirectory = isDir;
+                                }
+
+                                nav.MoveToParent();
+                            }
+                            
+                            newSkips.Add(rule);
                             hasMoreSkips = nav.MoveToNext();
                         }
 
-                        _skipFiles = newSkips;
+                        _skipRules = newSkips;
                         nav.MoveToParent();
                     }
                 }
@@ -73,11 +98,13 @@ namespace AzureSiteReplicator.Data
             XDocument doc = new XDocument();
             XElement root = new XElement("config");
 
-            IEnumerable<string> skips = SkipFiles;
-            XElement skipFiles = new XElement("skipFiles");
-            foreach (string skip in skips)
+            IEnumerable<SkipRule> skips = SkipRules;
+            XElement skipFiles = new XElement("skipRules");
+            foreach (SkipRule skip in skips)
             {
-                skipFiles.Add(new XElement("skip", skip));
+                XElement skipRule =
+                    new XElement("skipRule", new XAttribute("IsDirectory", skip.IsDirectory), skip.Expression);
+                skipFiles.Add(skipRule);
             }
 
             if (skipFiles.HasElements)
@@ -98,43 +125,52 @@ namespace AzureSiteReplicator.Data
             }
         }
 
-        public IEnumerable<string> SkipFiles
+        public IReadOnlyCollection<SkipRule> SkipRules
         {
             get
             {
-                var skipFiles = _skipFiles;
-                return skipFiles.AsEnumerable();
+                var skipFiles = _skipRules;
+                return skipFiles.AsReadOnly();
             }
         }
 
-        public void AddSkip(string skip)
+        public void AddSkip(SkipRule skip)
         {
-            List<string> skips = new List<string>(_skipFiles);
+            List<SkipRule> skips = new List<SkipRule>(_skipRules);
             skips.Add(skip);
-            _skipFiles = skips;
+            _skipRules = skips;
         }
 
-        public void SetSkips(List<string> skips)
+        public void SetSkips(List<SkipRule> skips)
         {
-            List<string> newList = new List<string>();
+            List<SkipRule> newList = new List<SkipRule>();
             if (skips != null)
             {
                 newList.AddRange(skips);
             }
-            _skipFiles = newList;
+            _skipRules = newList;
         }
 
         public void ClearSkips()
         {
-            List<string> skips = new List<string>();
-            _skipFiles = skips;
+            List<SkipRule> skips = new List<SkipRule>();
+            _skipRules = skips;
         }
 
-        public void RemoveSkip(string skip)
+        public void RemoveSkip(SkipRule skip)
         {
-            List<string> skips = new List<string>(_skipFiles);
-            skips.Remove(skip);
-            _skipFiles = skips;
+            List<SkipRule> skips = new List<SkipRule>(_skipRules);
+            int index = skips.FindIndex
+            (
+                m => string.Equals(m.Expression, skip.Expression, StringComparison.OrdinalIgnoreCase)
+            );
+
+            if (index > -1)
+            {
+                skips.RemoveAt(index);
+            }
+
+            _skipRules = skips;
         }
     }
 }

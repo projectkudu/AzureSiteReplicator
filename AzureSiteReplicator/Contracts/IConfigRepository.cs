@@ -11,7 +11,8 @@ namespace AzureSiteReplicator.Contracts
     public interface IConfigRepository
     {
         ConfigFile Config { get; }
-        IReadOnlyCollection<SiteStatusModel> SiteStatuses { get; }
-        void Reset();
+        IEnumerable<Site> Sites { get; }
+        void AddSite(string site);
+        void RemoveSite(string name);
     }
 }
