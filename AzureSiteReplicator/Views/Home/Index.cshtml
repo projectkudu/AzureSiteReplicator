@@ -40,7 +40,7 @@
                                         @*<a href="#" title="Sync"><span class="badgePlain glyphicon glyphicon-repeat"></span></a>*@
                                         <a href="#" title="Remove Site" class="removeSiteBadge"><span class="badgePlain glyphicon glyphicon-remove"></span></a>
                                         @*<a href="#" title="Edit publish settings"><span class="badgePlain glyphicon glyphicon-edit"></span></a>*@
-                                        <a href="/home/LogFile?siteName=@(site.Name)" title="View logs"><span class="badgePlain glyphicon glyphicon-list"></span></a>
+                                        <a href="@Url.Action("LogFile", new {SiteName=site.Name})" title="View logs"><span class="badgePlain glyphicon glyphicon-list"></span></a>
                                         @site.Name - @site.State.ToString()
                                     </li>
                                 }
@@ -127,9 +127,11 @@
                 return;
             }
 
+            var deleteSiteUrl = '@Url.Action("site")?name=' + siteName;
+            
             $.ajax({
                 type: "Delete",
-                url: '/home/site?name=' + siteName,
+                url: deleteSiteUrl,
                 contentType: "application/json",
                 error: function (jqXhr, textStatus, errorThrown) {
                     alert(textStatus + ": " + errorThrown);
@@ -189,9 +191,11 @@
                 skipRules.push(skipRule);
             });
 
+            var saveUrl = '@Url.Action("skiprules")';
+
             $.ajax({
                 type: "POST",
-                url: "/home/skiprules",
+                url: saveUrl,
                 contentType: "application/json",
                 data: JSON.stringify(skipRules),
                 error: function (jqXhr, textStatus, errorThrown) {

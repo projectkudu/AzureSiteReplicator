@@ -109,7 +109,7 @@ namespace AzureSiteReplicator
             string publishSettingsPath,
             out DeploymentBaseOptions deploymentBaseOptions)
         {
-            PublishSettings publishSettings = new PublishSettings(publishSettingsPath);
+            AzureSiteReplicator.Data.PublishSettings publishSettings = new AzureSiteReplicator.Data.PublishSettings(publishSettingsPath);
             deploymentBaseOptions = new DeploymentBaseOptions
             {
                 ComputerName = publishSettings.ComputerName,
