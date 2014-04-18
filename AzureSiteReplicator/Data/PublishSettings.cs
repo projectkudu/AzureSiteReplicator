@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Xml;
 using System.Xml.XPath;
 
-namespace Microsoft.Web.Deployment
+namespace AzureSiteReplicator.Data
 {
     public class PublishSettings
     {
@@ -16,6 +17,7 @@ namespace Microsoft.Web.Deployment
         private const string MSDeployHandler = "msdeploy.axd";
         private const string DefaultPort = ":8172";
 
+        private string _filePath = null;
         private string _publishUrlRaw = string.Empty;
         private string _computerName = string.Empty;
         private string _siteName = string.Empty;
@@ -33,8 +35,26 @@ namespace Microsoft.Web.Deployment
         
         public PublishSettings(string filePath)
         {
+            _filePath = filePath;
             XmlDocument doc = new XmlDocument();
-            doc.Load(filePath);
+
+            using (Stream stream = FileHelper.FileSystem.File.Open(
+                filePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.ReadWrite))
+            {
+                doc.Load(stream);
+            }
+
+            Load(doc.CreateNavigator());
+            
+        }
+
+        public PublishSettings(Stream stream)
+        {
+            XmlDocument doc = new XmlDocument();
+            doc.Load(stream);
             Load(doc.CreateNavigator());
         }
 
@@ -269,6 +289,14 @@ namespace Microsoft.Web.Deployment
             internal set
             {
                 _siteName = value;
+            }
+        }
+
+        public string FilePath
+        {
+            get
+            {
+                return _filePath;
             }
         }
 

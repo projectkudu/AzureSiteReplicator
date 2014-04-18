@@ -1,20 +1,279 @@
-﻿@{
+﻿@model AzureSiteReplicator.Models.ReplicationInfoModel
+
+@{
     ViewBag.Title = "Site list";
 }
 
-<div class="jumbotron">
-    <h1>Site list</h1>
+<div class="container">
+    <div class="row navbar" style="margin-top:10px;">
+        <div class="col-sm-6 col-md-4" id="tabHeadings">
+            <ul class="nav nav-tabs" data-tabs="tabs">
+                <li class="active"><a data-toggle="tab" href="#sites">Sites</a></li>
+                <li><a data-toggle="tab" href="#skips">Skip Rules</a></li>
+            </ul>
+        </div>
+        <div class="col-sm-6 col-md-8">
+        </div>
+    </div>
 
-    <ul class="list-group">
-        @foreach (var site in Model)
-        {
-            <li class="list-group-item">@site</li>
-        }
-    </ul>
+    <div class="row">
+        <div class="col-sm-1"></div>
+
+        <div class="col-sm-10 tab-body tab-content">
+            
+            <!-- Sites Tab -->
+            <div class="tab-pane active" id="sites">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <h1>Site List</h1>
+                        <ul class="list-group" style="margin-bottom:0px;">
+                            @if (Model.SiteStatuses.Count == 0)
+                            {
+                                @:There doesn't appear to be any sites configured yet.  Upload a publish settings file to get started.
+                            }
+                            else
+                            {
+                                var sites = Model.SiteStatuses;
+                                foreach(var site in sites)
+                                {
+                                    <li class="list-group-item" data-siteName="@site.Name" data-siteState="@site.State">
+                                        <a href="#" title="Remove Site" class="removeSiteBadge"><span class="badgePlain glyphicon glyphicon-remove"></span></a>
+                                        <a href="@Url.Action("LogFile", new {SiteName=site.Name})" title="Download logs"><span class="badgePlain glyphicon glyphicon-list"></span></a>
+                                        <a href="#" class="syncSiteBadge" title="Sync"><span class="badgePlain glyphicon glyphicon-repeat"></span></a>
+                                        @site.Name - @site.State.ToString()
+                                    </li>
+                                }
+                            }
+                        </ul>
+                    </div>
+                </div>
+                <div class="row" style="margin-top:100px;">
+                    <div class="col-sm-12">
+                        <h4>Upload Publish Settings File</h4>
+                        <form action="" class="form-inline" role="form" method="post" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <input type="file" name="file" id="file"/>
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" style="height:23px">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skips Tab -->
+            <div class="tab-pane" id="skips">
+                <h1>Skip Rules</h1>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <input type="text" id="skipExpressionText" placeholder="Regular Expression for File to Skip" class="col-sm-6"/>
+                        <button type="button" id="addSkipButton" disabled="disabled" class="btn btn-default btn-sm col-sm-1" style="margin-left:5px;">Add</button>
+                        <button type="button" id="saveSkipButton" disabled="disabled" class="btn btn-default btn-sm col-sm-1" style="margin-left:5px;">Save</button>
+                        <button type="button" id="testSkipButton" class="btn btn-default btn-sm btn-primary col-sm-1" style="margin-left:5px">Test</button>
+                    </div>
+                </div>
+                <div class="row" style="margin-top:20px;">
+                    <div class="col-sm-12">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Rule</th>
+                                    <th class="rowCentered" style="width:100px;">Is Directory</th>
+                                    <th class="rowCentered" style="width:50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="skipRulesTableBody">
+                            @foreach (var skip in Model.SkipFiles)
+                            {
+                                <tr class="skipRuleRow">
+                                    <td>@skip.Expression</td>
+                                    <td class="rowCentered"><input type="checkbox" checked="@skip.IsDirectory"/></td>
+                                    <td class="rowCentered"><button type="button" class="close" aria-hidden="true">&times;</button></td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="row" style="margin-top:40px;">
+                    <div class="col-sm-12">
+                        <h4>File to be skipped</h4>
+                        <textarea id="testSkipTextArea" readonly class="col-sm-12 form-control skipTextArea" style="max-width:inherit" rows="10"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-1"></div>
+    </div>
 </div>
 
-<form action="" method="post" enctype="multipart/form-data">
-    <label for="file">Upload new PublishSettings file:</label>
-    <input type="file" name="file" id="file" />
-    <input type="submit" />
-</form>
+@section scripts{
+    <script type="text/javascript">
+        function removeSkipFile() {
+            var $this = $(this);
+            $this.parent().parent().remove();
+            enableSaveButton();
+            event.preventDefault();
+        }
+
+        function enableSaveButton(){
+            var $saveSkipButton = $('#saveSkipButton');
+            $saveSkipButton.prop('disabled', false);
+            $saveSkipButton.addClass('btn-danger');
+        }
+
+        function getSkipRulesFromTable() {
+            var skipRules = [];
+            $('.skipRuleRow').each(function () {
+                var $this = $(this);
+
+                var skipRule = {};
+                skipRule["expression"] = $this.find('td:nth-child(1)').text();
+                skipRule["isDirectory"] = $this.find('td:nth-child(2) > input').is(':checked');
+                skipRules.push(skipRule);
+            });
+
+            return skipRules;
+        }
+
+        $('.removeSiteBadge').click(function () {
+            var $this = $(this);
+            var siteName = $this.parent().attr("data-siteName");
+            event.preventDefault();
+
+            if (!confirm('Are you sure you would like to remove the site "' + siteName + '"?')) {
+                return;
+            }
+
+            var deleteSiteUrl = '@Url.Action("site")?name=' + siteName;
+            
+            $.ajax({
+                type: "Delete",
+                url: deleteSiteUrl,
+                contentType: "application/json",
+                error: function (jqXhr, textStatus, errorThrown) {
+                    alert(textStatus + ": " + errorThrown);
+                }
+            });
+
+            $this.parent().remove();
+        });
+
+        $('.syncSiteBadge').each(function () {
+            var $this = $(this);
+            var siteName = $this.parent().attr('data-siteName');
+            var siteState = $this.parent().attr('data-siteState');
+
+            // Disable sync button if state is not determinate
+            if (siteState != 'Failed' && siteState != 'Succeeded') {
+                $this.css('pointer-events', 'none');
+            }
+
+            $this.click(function () {
+                var syncSiteUrl = '@Url.Action("syncSite")?name=' + siteName;
+
+                $.ajax({
+                    type: 'POST',
+                    url: syncSiteUrl,
+                    contentType: 'application/json',
+                    error: function (jqXhr, textStatus, errorThrown) {
+                        alert('Sync failed to site ' + siteName + ': ' + textStatus + ': ' + errorThrown);
+                    }
+                });
+            });
+        });
+
+        $('#addSkipButton').click(function () {
+            var $expr = $('#skipExpressionText');
+            var exprValue = $expr.val();
+
+            var row =
+                '<tr class="skipRuleRow">\n' +
+                '   <td>' + exprValue + '</td>\n' +
+                '   <td class="rowCentered"><input type="checkbox" /></td>\n' +
+                '   <td class="rowCentered"><button type="button" class="close" aria-hidden="true">×</button></td>\n' +
+                '</tr>';
+
+            var $row = $(row);
+            $row.find('button').click(removeSkipFile);
+            $row.find('input[type="checkbox"]').change(enableSaveButton);
+
+            $('#skipRulesTableBody').append($row);
+            enableSaveButton();
+
+            $(this).prop('disabled', true);
+            $expr.val('');
+
+            event.preventDefault()
+        });
+
+        $('.skipRuleRow input[type="checkbox"]').change(enableSaveButton);
+
+        $('#skipExpressionText').keyup(function () {
+            var $this = $(this);
+            var $addButton = $('#addSkipButton');
+            if ($this.val().length == 0) {
+                $addButton.prop('disabled', true);
+            }
+            else {
+                $addButton.prop('disabled', false);
+            }
+
+            event.preventDefault()
+        });
+
+        $('#saveSkipButton').click(function () {
+            var skipRules = getSkipRulesFromTable();
+            var saveUrl = '@Url.Action("skiprules")';
+
+            $.ajax({
+                type: "POST",
+                url: saveUrl,
+                contentType: "application/json",
+                data: JSON.stringify(skipRules),
+                error: function (jqXhr, textStatus, errorThrown) {
+                    alert("Failed to save skip rules: " + textStatus + ", " + errorThrown);
+                }
+            });
+
+            var $this = $(this);
+            $this.prop('disabled', true);
+            $this.removeClass('btn-danger');
+
+            event.preventDefault()
+        });
+
+        $('tr.skipRuleRow button').click(removeSkipFile);
+
+        $('#testSkipButton').click(function(){
+            var testUrl = '@Url.Action("testSkipRules")';
+            var skipRules = getSkipRulesFromTable();
+
+            $.ajax({
+                type: "POST",
+                url: testUrl,
+                contentType: "application/json",
+                data: JSON.stringify(skipRules),
+                error: function (jqXhr, textStatus, errorThrown) {
+                    alert("Failed to test skip rules: " + textStatus + ", " + errorThrown);
+                },
+                success: function (data, textStatus, jqXHR) {
+                    var $textArea = $('#testSkipTextArea');
+                    var content = '';
+                    data.forEach(function (entry) {
+                        content += entry +'\n';
+                    });
+
+                    if (content.length == 0) {
+                        content = "0 files were skipped";
+                    }
+
+                    $textArea.val(content);
+                }
+            });
+        });
+
+    </script>
+}

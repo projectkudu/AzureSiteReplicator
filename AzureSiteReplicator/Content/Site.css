@@ -40,3 +40,62 @@ input[type="checkbox"].input-validation-error {
 .validation-summary-valid {
     display: none;
 }
+
+.tab-body {
+    background-color: #eeeeee; padding: 30px; border-radius: 6px;
+}
+
+.vcenter {
+    display: inline-block;
+    vertical-align: middle;
+    float: none;
+}
+
+input[type="text"] {
+    height: 30px;
+}
+
+.submitButton {
+    height: 23px;
+    width: auto;
+    overflow: visible;
+}
+
+.rowCentered {
+    text-align:center;
+}
+
+.badgePlain {
+    float:right;
+    margin-left:5px;
+    margin-right:5px;
+}
+
+.skipTextArea {
+    max-width: inherit;
+    resize: vertical;
+    margin-top: 5px;
+}
+
+
+/*#file {
+    display:none;
+}*/
+
+/*.fileUpload {
+	position: relative;
+	overflow: hidden;
+	margin: 10px;
+}*/
+
+/*.fileUpload input.upload {
+	position: absolute;
+	top: 0;
+	right: 0;
+	margin: 0;
+	padding: 0;
+	font-size: 20px;
+	cursor: pointer;
+	opacity: 0;
+	filter: alpha(opacity=0);
+}*/
