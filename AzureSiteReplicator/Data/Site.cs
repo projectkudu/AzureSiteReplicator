@@ -79,6 +79,11 @@ namespace AzureSiteReplicator.Data
             }
         }
 
+        public string FilePath
+        {
+            get { return _sitePath; }
+        }
+
         public override bool Equals(object obj)
         {
             Site site = obj as Site;

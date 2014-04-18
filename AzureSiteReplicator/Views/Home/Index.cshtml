@@ -36,11 +36,10 @@
                                 var sites = Model.SiteStatuses;
                                 foreach(var site in sites)
                                 {
-                                    <li class="list-group-item" data-siteName="@site.Name">
-                                        @*<a href="#" title="Sync"><span class="badgePlain glyphicon glyphicon-repeat"></span></a>*@
+                                    <li class="list-group-item" data-siteName="@site.Name" data-siteState="@site.State">
                                         <a href="#" title="Remove Site" class="removeSiteBadge"><span class="badgePlain glyphicon glyphicon-remove"></span></a>
-                                        @*<a href="#" title="Edit publish settings"><span class="badgePlain glyphicon glyphicon-edit"></span></a>*@
-                                        <a href="@Url.Action("LogFile", new {SiteName=site.Name})" title="View logs"><span class="badgePlain glyphicon glyphicon-list"></span></a>
+                                        <a href="@Url.Action("LogFile", new {SiteName=site.Name})" title="Download logs"><span class="badgePlain glyphicon glyphicon-list"></span></a>
+                                        <a href="#" class="syncSiteBadge" title="Sync"><span class="badgePlain glyphicon glyphicon-repeat"></span></a>
                                         @site.Name - @site.State.ToString()
                                     </li>
                                 }
@@ -71,6 +70,7 @@
                         <input type="text" id="skipExpressionText" placeholder="Regular Expression for File to Skip" class="col-sm-6"/>
                         <button type="button" id="addSkipButton" disabled="disabled" class="btn btn-default btn-sm col-sm-1" style="margin-left:5px;">Add</button>
                         <button type="button" id="saveSkipButton" disabled="disabled" class="btn btn-default btn-sm col-sm-1" style="margin-left:5px;">Save</button>
+                        <button type="button" id="testSkipButton" class="btn btn-default btn-sm btn-primary col-sm-1" style="margin-left:5px">Test</button>
                     </div>
                 </div>
                 <div class="row" style="margin-top:20px;">
@@ -96,6 +96,12 @@
                         </table>
                     </div>
                 </div>
+                <div class="row" style="margin-top:40px;">
+                    <div class="col-sm-12">
+                        <h4>File to be skipped</h4>
+                        <textarea id="testSkipTextArea" readonly class="col-sm-12 form-control skipTextArea" style="max-width:inherit" rows="10"></textarea>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -115,7 +121,21 @@
         function enableSaveButton(){
             var $saveSkipButton = $('#saveSkipButton');
             $saveSkipButton.prop('disabled', false);
-            $saveSkipButton.addClass('btn-primary');
+            $saveSkipButton.addClass('btn-danger');
+        }
+
+        function getSkipRulesFromTable() {
+            var skipRules = [];
+            $('.skipRuleRow').each(function () {
+                var $this = $(this);
+
+                var skipRule = {};
+                skipRule["expression"] = $this.find('td:nth-child(1)').text();
+                skipRule["isDirectory"] = $this.find('td:nth-child(2) > input').is(':checked');
+                skipRules.push(skipRule);
+            });
+
+            return skipRules;
         }
 
         $('.removeSiteBadge').click(function () {
@@ -139,6 +159,30 @@
             });
 
             $this.parent().remove();
+        });
+
+        $('.syncSiteBadge').each(function () {
+            var $this = $(this);
+            var siteName = $this.parent().attr('data-siteName');
+            var siteState = $this.parent().attr('data-siteState');
+
+            // Disable sync button if state is not determinate
+            if (siteState != 'Failed' && siteState != 'Succeeded') {
+                $this.css('pointer-events', 'none');
+            }
+
+            $this.click(function () {
+                var syncSiteUrl = '@Url.Action("syncSite")?name=' + siteName;
+
+                $.ajax({
+                    type: 'POST',
+                    url: syncSiteUrl,
+                    contentType: 'application/json',
+                    error: function (jqXhr, textStatus, errorThrown) {
+                        alert('Sync failed to site ' + siteName + ': ' + textStatus + ': ' + errorThrown);
+                    }
+                });
+            });
         });
 
         $('#addSkipButton').click(function () {
@@ -181,16 +225,7 @@
         });
 
         $('#saveSkipButton').click(function () {
-            var skipRules = [];
-            $('.skipRuleRow').each(function () {
-                var $this = $(this);
-
-                var skipRule = {};
-                skipRule["expression"] = $this.find('td:nth-child(1)').text();
-                skipRule["isDirectory"] = $this.find('td:nth-child(2) > input').is(':checked');
-                skipRules.push(skipRule);
-            });
-
+            var skipRules = getSkipRulesFromTable();
             var saveUrl = '@Url.Action("skiprules")';
 
             $.ajax({
@@ -205,11 +240,40 @@
 
             var $this = $(this);
             $this.prop('disabled', true);
-            $this.removeClass('btn-primary');
+            $this.removeClass('btn-danger');
 
             event.preventDefault()
         });
 
         $('tr.skipRuleRow button').click(removeSkipFile);
+
+        $('#testSkipButton').click(function(){
+            var testUrl = '@Url.Action("testSkipRules")';
+            var skipRules = getSkipRulesFromTable();
+
+            $.ajax({
+                type: "POST",
+                url: testUrl,
+                contentType: "application/json",
+                data: JSON.stringify(skipRules),
+                error: function (jqXhr, textStatus, errorThrown) {
+                    alert("Failed to test skip rules: " + textStatus + ", " + errorThrown);
+                },
+                success: function (data, textStatus, jqXHR) {
+                    var $textArea = $('#testSkipTextArea');
+                    var content = '';
+                    data.forEach(function (entry) {
+                        content += entry +'\n';
+                    });
+
+                    if (content.length == 0) {
+                        content = "0 files were skipped";
+                    }
+
+                    $textArea.val(content);
+                }
+            });
+        });
+
     </script>
 }

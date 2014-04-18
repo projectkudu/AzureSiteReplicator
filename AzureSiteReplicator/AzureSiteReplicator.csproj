@@ -132,6 +132,7 @@
     <Compile Include="Contracts\IEnvironment.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Data\ConfigRepository.cs" />
+    <Compile Include="Data\LockFile.cs" />
     <Compile Include="Data\LogFile.cs" />
     <Compile Include="Data\Site.cs" />
     <Compile Include="Data\StatusFile.cs" />

@@ -17,6 +17,7 @@ namespace AzureSiteReplicator.Data
         private const string MSDeployHandler = "msdeploy.axd";
         private const string DefaultPort = ":8172";
 
+        private string _filePath = null;
         private string _publishUrlRaw = string.Empty;
         private string _computerName = string.Empty;
         private string _siteName = string.Empty;
@@ -34,6 +35,7 @@ namespace AzureSiteReplicator.Data
         
         public PublishSettings(string filePath)
         {
+            _filePath = filePath;
             XmlDocument doc = new XmlDocument();
 
             using (Stream stream = FileHelper.FileSystem.File.Open(
@@ -287,6 +289,14 @@ namespace AzureSiteReplicator.Data
             internal set
             {
                 _siteName = value;
+            }
+        }
+
+        public string FilePath
+        {
+            get
+            {
+                return _filePath;
             }
         }
 

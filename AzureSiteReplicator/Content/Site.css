@@ -71,6 +71,13 @@ input[type="text"] {
     margin-right:5px;
 }
 
+.skipTextArea {
+    max-width: inherit;
+    resize: vertical;
+    margin-top: 5px;
+}
+
+
 /*#file {
     display:none;
 }*/

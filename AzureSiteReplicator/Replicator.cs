@@ -89,31 +89,12 @@ namespace AzureSiteReplicator
 
         private async Task PublishContentToAllSites(
             string contentPath,
-            string publishSettingsPath)
+            string siteReplicatorPath)
         {
-            string[] publishSettingsFiles = 
-                FileHelper.FileSystem.Directory.GetFiles(publishSettingsPath, "*.publishSettings");
-
-            Trace.TraceInformation("Publish settings found: {0}", String.Join(",", publishSettingsFiles));
-
-            var webDeployHelper = new WebDeployHelper();
-
             // Publish to all the target sites in parallel
-            var allChanges = await Task.WhenAll(publishSettingsFiles.Select(async publishSettingsFile =>
+            var allChanges = await Task.WhenAll(Instance.Repository.Sites.Select(async site =>
             {
-                try
-                {
-                    return await Task<DeploymentChangeSummary>.Run(() => 
-                        webDeployHelper.DeployContentToOneSite(
-                            Repository,
-                            Environment.Instance.ContentPath,
-                            publishSettingsFile));
-                }
-                catch (Exception e)
-                {
-                    Trace.TraceError("Error processing {0}: {1}", Path.GetFileName(publishSettingsFile), e.ToString());
-                    return null;
-                }
+                return await PublishContentToSingleSite(site);
             }));
 
             // Trace all the results
@@ -122,8 +103,7 @@ namespace AzureSiteReplicator
                 DeploymentChangeSummary changeSummary = allChanges[i];
                 if (changeSummary == null) continue;
 
-                Trace.TraceInformation("Processed {0}", Path.GetFileName(publishSettingsFiles[i]));
-
+                Trace.TraceInformation("Processed sites: {0}", Instance.Repository.Sites.Count());
                 Trace.TraceInformation("BytesCopied: {0}", changeSummary.BytesCopied);
                 Trace.TraceInformation("Added: {0}", changeSummary.ObjectsAdded);
                 Trace.TraceInformation("Updated: {0}", changeSummary.ObjectsUpdated);
@@ -132,6 +112,43 @@ namespace AzureSiteReplicator
                 Trace.TraceInformation("Warnings: {0}", changeSummary.Warnings);
                 Trace.TraceInformation("Total changes: {0}", changeSummary.TotalChanges);
             }
+        }
+
+        public async Task<DeploymentChangeSummary> PublishContentToSingleSite(Site site)
+        {
+            string lockPath = Path.Combine(site.FilePath, "deployment.lock");
+            LockFile lockFile = null;
+
+            Trace.TraceInformation("Sync to single site: {0}", site.Name);
+
+            try
+            {
+                if (LockFile.TryGetLockFile(lockPath, out lockFile))
+                {
+                    WebDeployHelper webDeployHelper = new WebDeployHelper();
+                    return await Task<DeploymentChangeSummary>.Run(() =>
+                        webDeployHelper.DeployContentToOneSite(
+                            Repository,
+                            Environment.Instance.ContentPath,
+                            site.Settings.FilePath));
+                }
+
+                return null;
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError("Error processing {0}: {1}", Path.GetFileName(site.Settings.FilePath), e.ToString());
+                return null;
+            }
+            finally
+            {
+                if (lockFile != null)
+                {
+                    lockFile.Dispose();
+                    lockFile = null;
+                }
+            }
+
         }
 
         public IConfigRepository Repository

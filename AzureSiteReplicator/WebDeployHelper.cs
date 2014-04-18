@@ -15,6 +15,9 @@ namespace AzureSiteReplicator
 {
     public class WebDeployHelper
     {
+        private List<string> _skipRulesTestResults;
+        private Object _lockObj = new Object();
+
         public DeploymentChangeSummary DeployContentToOneSite(
             IConfigRepository repository,
             string contentPath,
@@ -26,7 +29,7 @@ namespace AzureSiteReplicator
             bool success = true;
             DeploymentChangeSummary summary = null;
 
-            AddSkips(repository, sourceBaseOptions, destBaseOptions);
+            AddSkips(repository.Config.SkipRules, sourceBaseOptions, destBaseOptions);
 
             Trace.TraceInformation("Starting WebDeploy for {0}", Path.GetFileName(publishSettingsFile));
 
@@ -83,14 +86,67 @@ namespace AzureSiteReplicator
             return summary;
         }
 
+        public List<string> TestSkipRule(List<SkipRule> skipRules, string contentPath)
+        {
+            DeploymentBaseOptions sourceOptions = new DeploymentBaseOptions();
+            DeploymentBaseOptions destOptions = new DeploymentBaseOptions();
+            DeploymentSyncOptions syncOptions = new DeploymentSyncOptions();
+
+            _skipRulesTestResults = new List<string>();
+
+            AddSkips(skipRules.AsReadOnly(), sourceOptions, destOptions);
+            syncOptions.WhatIf = true;
+
+            // Puropsely only setting event handler for source so that we don't get duplicate
+            // events being fired
+            sourceOptions.TraceLevel = TraceLevel.Verbose;
+            sourceOptions.Trace += AddSkipRuleResultEventHandler;
+
+            using (DeploymentObject sourceObject = DeploymentManager.CreateObject(DeploymentWellKnownProvider.ContentPath, contentPath, sourceOptions))
+            {
+                sourceObject.SyncTo(destOptions, syncOptions);
+            }
+
+            _skipRulesTestResults.Sort();
+            return _skipRulesTestResults;
+        }
+
+        private void AddSkipRuleResultEventHandler(object sender, DeploymentTraceEventArgs traceEvent)
+        {
+            DeploymentSkipDirectiveEventArgs skipArgs = traceEvent as DeploymentSkipDirectiveEventArgs;
+
+            if (skipArgs != null)
+            {
+                string path = skipArgs.AbsolutePath;
+                bool isDirectory = FileHelper.FileSystem.Directory.Exists(path);
+                string basePath = Environment.Instance.ContentPath;
+                if (path != null && path.Length > basePath.Length)
+                {
+                    // Removing the base filesystem content path so that people
+                    // don't try to build expressions based off of that path in case
+                    // it changes later.
+                    path = path.Remove(0, basePath.Length);
+                }
+
+                if (isDirectory)
+                {
+                    path = "Directory: " + path;
+                }
+                else
+                {
+                    path = "File: " + path;
+                }
+
+                _skipRulesTestResults.Add(path);
+            }
+        }
 
         private static void AddSkips(
-            IConfigRepository repository,
+            IReadOnlyCollection<SkipRule> skips,
             DeploymentBaseOptions sourceBaseOptions,
             DeploymentBaseOptions destBaseOptions)
         {
-            IReadOnlyCollection<SkipRule> skipFiles = repository.Config.SkipRules;
-            foreach (SkipRule skip in skipFiles)
+            foreach (SkipRule skip in skips)
             {
                 if (skip.IsDirectory)
                 {
