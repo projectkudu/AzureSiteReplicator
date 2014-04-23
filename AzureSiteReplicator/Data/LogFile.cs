@@ -11,7 +11,7 @@ namespace AzureSiteReplicator.Data
 {
     public class LogFile : IDisposable
     {
-        private const int MaxBufferSize = 16000;
+        private const int MaxBufferSize = 1024;
         private string _filePath;
         private string _siteName;
         private StringBuilder _buffer;

@@ -21,7 +21,6 @@ namespace AzureSiteReplicator
             AreaRegistration.RegisterAllAreas();
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
-            BundleConfig.RegisterBundles(BundleTable.Bundles);
 
             // Trigger an initial deployment when we start
             Replicator.Instance.TriggerDeployment();

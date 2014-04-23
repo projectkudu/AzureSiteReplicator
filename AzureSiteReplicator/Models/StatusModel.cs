@@ -1,4 +1,6 @@
 ﻿using AzureSiteReplicator.Contracts;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,15 +32,15 @@ namespace AzureSiteReplicator.Models
             }
         }
 
-        public DeployState State 
+        public string State 
         {
             get
             {
-                return _statusFile.State;
+                return _statusFile.State.ToString();
             }
             set
             {
-                _statusFile.State = value;
+                _statusFile.State = (DeployState)Enum.Parse(typeof(DeployState), value);
             }
         }
 

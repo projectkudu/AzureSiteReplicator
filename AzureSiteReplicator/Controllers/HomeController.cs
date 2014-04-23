@@ -32,6 +32,18 @@ namespace AzureSiteReplicator.Controllers
             return View(model);
         }
 
+        [HttpGet]
+        public JsonResult SiteStatuses()
+        {
+            List<SiteStatusModel> statuses = new List<SiteStatusModel>();
+            foreach (var site in Replicator.Instance.Repository.Sites)
+            {
+                statuses.Add(new SiteStatusModel(site.Status));
+            }
+
+            return Json(statuses, JsonRequestBehavior.AllowGet);
+        }
+
         [HttpPost]
         public ActionResult Index(HttpPostedFileBase file)
         {

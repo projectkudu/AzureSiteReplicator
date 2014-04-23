@@ -26,7 +26,7 @@
                 <div class="row">
                     <div class="col-sm-12">
                         <h1>Site List</h1>
-                        <ul class="list-group" style="margin-bottom:0px;">
+                        <ul id="siteList" class="list-group" style="margin-bottom:0px;">
                             @if (Model.SiteStatuses.Count == 0)
                             {
                                 @:There doesn't appear to be any sites configured yet.  Upload a publish settings file to get started.
@@ -36,11 +36,12 @@
                                 var sites = Model.SiteStatuses;
                                 foreach(var site in sites)
                                 {
-                                    <li class="list-group-item" data-siteName="@site.Name" data-siteState="@site.State">
+                                    string status = site.State == "NotStarted" ? "Deploying" : site.State;
+                                    <li class="list-group-item" data-siteName="@site.Name" data-siteState="@status">
+                                        <span class="siteStatusText">@site.Name - @status</span>
                                         <a href="#" title="Remove Site" class="removeSiteBadge"><span class="badgePlain glyphicon glyphicon-remove"></span></a>
                                         <a href="@Url.Action("LogFile", new {SiteName=site.Name})" title="Download logs"><span class="badgePlain glyphicon glyphicon-list"></span></a>
                                         <a href="#" class="syncSiteBadge" title="Sync"><span class="badgePlain glyphicon glyphicon-repeat"></span></a>
-                                        @site.Name - @site.State.ToString()
                                     </li>
                                 }
                             }
@@ -110,170 +111,10 @@
 </div>
 
 @section scripts{
+    <script type="text/javascript" src='@Url.Content("~/Scripts/replicator.js")'></script>
     <script type="text/javascript">
-        function removeSkipFile() {
-            var $this = $(this);
-            $this.parent().parent().remove();
-            enableSaveButton();
-            event.preventDefault();
-        }
 
-        function enableSaveButton(){
-            var $saveSkipButton = $('#saveSkipButton');
-            $saveSkipButton.prop('disabled', false);
-            $saveSkipButton.addClass('btn-danger');
-        }
-
-        function getSkipRulesFromTable() {
-            var skipRules = [];
-            $('.skipRuleRow').each(function () {
-                var $this = $(this);
-
-                var skipRule = {};
-                skipRule["expression"] = $this.find('td:nth-child(1)').text();
-                skipRule["isDirectory"] = $this.find('td:nth-child(2) > input').is(':checked');
-                skipRules.push(skipRule);
-            });
-
-            return skipRules;
-        }
-
-        $('.removeSiteBadge').click(function () {
-            var $this = $(this);
-            var siteName = $this.parent().attr("data-siteName");
-            event.preventDefault();
-
-            if (!confirm('Are you sure you would like to remove the site "' + siteName + '"?')) {
-                return;
-            }
-
-            var deleteSiteUrl = '@Url.Action("site")?name=' + siteName;
-            
-            $.ajax({
-                type: "Delete",
-                url: deleteSiteUrl,
-                contentType: "application/json",
-                error: function (jqXhr, textStatus, errorThrown) {
-                    alert(textStatus + ": " + errorThrown);
-                }
-            });
-
-            $this.parent().remove();
-        });
-
-        $('.syncSiteBadge').each(function () {
-            var $this = $(this);
-            var siteName = $this.parent().attr('data-siteName');
-            var siteState = $this.parent().attr('data-siteState');
-
-            // Disable sync button if state is not determinate
-            if (siteState != 'Failed' && siteState != 'Succeeded') {
-                $this.css('pointer-events', 'none');
-            }
-
-            $this.click(function () {
-                var syncSiteUrl = '@Url.Action("syncSite")?name=' + siteName;
-
-                $.ajax({
-                    type: 'POST',
-                    url: syncSiteUrl,
-                    contentType: 'application/json',
-                    error: function (jqXhr, textStatus, errorThrown) {
-                        alert('Sync failed to site ' + siteName + ': ' + textStatus + ': ' + errorThrown);
-                    }
-                });
-            });
-        });
-
-        $('#addSkipButton').click(function () {
-            var $expr = $('#skipExpressionText');
-            var exprValue = $expr.val();
-
-            var row =
-                '<tr class="skipRuleRow">\n' +
-                '   <td>' + exprValue + '</td>\n' +
-                '   <td class="rowCentered"><input type="checkbox" /></td>\n' +
-                '   <td class="rowCentered"><button type="button" class="close" aria-hidden="true">×</button></td>\n' +
-                '</tr>';
-
-            var $row = $(row);
-            $row.find('button').click(removeSkipFile);
-            $row.find('input[type="checkbox"]').change(enableSaveButton);
-
-            $('#skipRulesTableBody').append($row);
-            enableSaveButton();
-
-            $(this).prop('disabled', true);
-            $expr.val('');
-
-            event.preventDefault()
-        });
-
-        $('.skipRuleRow input[type="checkbox"]').change(enableSaveButton);
-
-        $('#skipExpressionText').keyup(function () {
-            var $this = $(this);
-            var $addButton = $('#addSkipButton');
-            if ($this.val().length == 0) {
-                $addButton.prop('disabled', true);
-            }
-            else {
-                $addButton.prop('disabled', false);
-            }
-
-            event.preventDefault()
-        });
-
-        $('#saveSkipButton').click(function () {
-            var skipRules = getSkipRulesFromTable();
-            var saveUrl = '@Url.Action("skiprules")';
-
-            $.ajax({
-                type: "POST",
-                url: saveUrl,
-                contentType: "application/json",
-                data: JSON.stringify(skipRules),
-                error: function (jqXhr, textStatus, errorThrown) {
-                    alert("Failed to save skip rules: " + textStatus + ", " + errorThrown);
-                }
-            });
-
-            var $this = $(this);
-            $this.prop('disabled', true);
-            $this.removeClass('btn-danger');
-
-            event.preventDefault()
-        });
-
-        $('tr.skipRuleRow button').click(removeSkipFile);
-
-        $('#testSkipButton').click(function(){
-            var testUrl = '@Url.Action("testSkipRules")';
-            var skipRules = getSkipRulesFromTable();
-
-            $.ajax({
-                type: "POST",
-                url: testUrl,
-                contentType: "application/json",
-                data: JSON.stringify(skipRules),
-                error: function (jqXhr, textStatus, errorThrown) {
-                    alert("Failed to test skip rules: " + textStatus + ", " + errorThrown);
-                },
-                success: function (data, textStatus, jqXHR) {
-                    var $textArea = $('#testSkipTextArea');
-                    var content = '';
-                    data.forEach(function (entry) {
-                        content += entry +'\n';
-                    });
-
-                    if (content.length == 0) {
-                        content = "0 files were skipped";
-                    }
-
-                    $textArea.val(content);
-                }
-            });
-        });
-
+        // Global Variable used to help javascript resolve the sub application path once the site is hosted on WAWS
+        var BasePath = '@Request.Url.GetLeftPart(UriPartial.Path)'
     </script>
 }
