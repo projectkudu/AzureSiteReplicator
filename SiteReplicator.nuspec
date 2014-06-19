@@ -3,12 +3,13 @@
   <metadata>
     <id>sitereplicator</id>
     <title>Site Replicator</title>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <authors>David Ebbo, Elliott Hamai</authors>
     <licenseUrl>http://opensource.org/licenses/Apache-2.0</licenseUrl>
     <projectUrl>https://github.com/projectkudu/AzureSiteReplicator</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>A tool to replicate a site into other sites</description>
+    <iconUrl>https://raw.githubusercontent.com/projectkudu/AzureSiteReplicator/master/AzureSiteReplicator/Content/WebsiteReplicator50x50.png</iconUrl>
     <tags>replication</tags>
   </metadata>
   <files>
