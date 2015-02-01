@@ -47,7 +47,7 @@ namespace AzureSiteReplicator.Controllers
         [HttpPost]
         public ActionResult Index(HttpPostedFileBase file)
         {
-            if (file.ContentLength > 0)
+            if (file != null && file.ContentLength > 0)
             {
                 try
                 {
