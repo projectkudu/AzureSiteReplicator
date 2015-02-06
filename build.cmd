@@ -4,4 +4,4 @@ MSBuild.exe AzureSiteReplicator\AzureSiteReplicator.csproj /t:pipelinePreDeployC
 copy "%ProgramW6432%\IIS\Microsoft Web Deploy V3\Microsoft.Web.Deployment.dll" artifacts\bin
 copy "%ProgramW6432%\IIS\Microsoft Web Deploy V3\Microsoft.Web.Deployment.Tracing.dll" artifacts\bin
 copy "%ProgramW6432%\IIS\Microsoft Web Deploy V3\Microsoft.Web.Delegation.dll" artifacts\bin
-nuget pack
+nuget pack -NoPackageAnalysis
