@@ -14,16 +14,16 @@ using System.Web.Routing;
 
 namespace AzureSiteReplicator
 {
-    public class MvcApplication : System.Web.HttpApplication
-    {
-        protected void Application_Start()
-        {
-            AreaRegistration.RegisterAllAreas();
-            FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
-            RouteConfig.RegisterRoutes(RouteTable.Routes);
+	public class MvcApplication : System.Web.HttpApplication
+	{
+		protected void Application_Start()
+		{
+			AreaRegistration.RegisterAllAreas();
+			FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
+			RouteConfig.RegisterRoutes(RouteTable.Routes);
 
-            // Trigger an initial deployment when we start
-            Replicator.Instance.TriggerDeployment();
-        }
-    }
+			// Only want deployment to trigger on API call ex. POST /Home/SyncSite 
+			// Replicator.Instance.TriggerDeployment();
+		}
+	}
 }
